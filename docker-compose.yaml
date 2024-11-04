@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  coreos-pxe-download:
+    container_name: coreos-pxe-download
+    restart: no
+    build: .
+    image: openshift-install
+    volumes:
+      - ./tftp/coreos/:/pxe/
+    working_dir: /pxe/
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        openshift-install coreos print-stream-json | 
+        jq -r '.architectures.x86_64.artifacts.metal | .release, .formats.pxe[].location' |
+        {
+          read -r release
+          xargs -I{} curl -JOL {}
+          echo "$$release" > release.txt
+        }
