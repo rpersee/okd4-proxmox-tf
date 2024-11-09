@@ -4,6 +4,9 @@ FROM registry.access.redhat.com/ubi9/ubi:latest
 
 COPY --from=jq /jq /usr/local/bin/jq
 
+RUN dnf -y --setopt=tsflags=nodocs install xz && \
+    dnf clean all
+
 WORKDIR /app
 
 ARG OKD_VERSION
