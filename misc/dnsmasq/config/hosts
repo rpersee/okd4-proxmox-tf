@@ -1,0 +1,4 @@
+192.168.1.254   root.home.arpa
+
+127.0.0.1       api-int.ocp4.home.arpa
+192.168.1.140   sno.ocp4.home.arpa

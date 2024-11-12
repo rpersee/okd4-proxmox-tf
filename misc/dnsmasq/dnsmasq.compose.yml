@@ -1,0 +1,16 @@
+#!/usr/bin/env -S docker compose -f
+---
+name: dnsmasq
+services:
+  dnsmasq:
+    container_name: dnsmasq
+    restart: always
+    image: strm/dnsmasq
+    command: ["-d"]
+    volumes:
+      - ./config/dnsmasq.conf:/etc/dnsmasq.conf
+      - ./config/hosts:/etc/dnsmasq.hosts
+    ports:
+      - "192.168.1.254:53:53/udp"
+    cap_add:
+      - NET_ADMIN
