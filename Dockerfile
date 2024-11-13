@@ -1,8 +1,10 @@
 FROM ghcr.io/jqlang/jq:latest as jq
+FROM docker.io/mikefarah/yq as yq
 
 FROM registry.access.redhat.com/ubi9/ubi:latest
 
 COPY --from=jq /jq /usr/local/bin/jq
+COPY --from=yq /usr/bin/yq /usr/local/bin/yq
 
 RUN dnf -y --setopt=tsflags=nodocs install xz && \
     dnf clean all

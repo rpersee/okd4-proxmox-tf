@@ -41,16 +41,22 @@ variable "proxmox_datastore" {
 }
 
 # OpenShift Container Platform variables ================================================
+variable "ocp_sno_hostname" {
+  description = "The hostname for the single-node OpenShift cluster."
+  type        = string
+  default     = "sno"
+}
+
 variable "ocp_cluster_name" {
   description = "The cluster name that you specified in your DNS records."
   type        = string
   default     = "ocp4"
 }
 
-variable "ocp_cluster_domain" {
+variable "ocp_base_domain" {
   description = "The base domain to which the cluster should belong."
   type        = string
-  default     = "local"
+  default     = "home.arpa"
 }
 
 variable "ocp_network_type" {
@@ -99,4 +105,18 @@ variable "ocp_installation_disk" {
   description = "The target disk drive for coreos-installer."
   type        = string
   default     = "/dev/sda"
+}
+
+variable "ocp_net_config" {
+  description = "The network configuration for the SNO deployment."
+  type = object({
+    address_cidr = string
+    gateway      = string
+    nameserver   = string
+  })
+  default = {
+    address_cidr = "192.168.1.140/24"
+    gateway      = "192.168.1.1"
+    nameserver   = "192.168.1.254"
+  }
 }

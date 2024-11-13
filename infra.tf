@@ -37,36 +37,31 @@ resource "proxmox_virtual_environment_file" "coreos_qcow2" {
   }
 }
 
-# resource "proxmox_virtual_environment_vm" "sno" {
-#   name      = "sno-${var.ocp_cluster_name}"
-#   node_name = var.proxmox_node
-#   cpu {
-#     cores = 6
-#     type = "x86-64-v2-AES"
-#   }
-#   memory {
-#     dedicated = 8192
-#     floating  = 16384
-#   }
-#   disk {
-#     datastore_id = "data"
-#     file_id      = proxmox_virtual_environment_file.coreos_qcow2.id
-#     interface    = "virtio0"
-#     iothread     = true
-#     discard      = "on"
-#     size         = 120
-#   }
-#   initialization {
-#     ip_config {
-#       ipv4 {
-#         address = "dhcp"
-#       }
-#     }
-#     datastore_id = "data"
-#     user_data_file_id = proxmox_virtual_environment_file.ignition_snippet.id
-#   }
-#   network_device {
-#     bridge = "vmbr0"
-#   }
-#   serial_device {}
-# }
+resource "proxmox_virtual_environment_vm" "sno" {
+  name      = "${var.ocp_sno_hostname}-${var.ocp_cluster_name}"
+  node_name = var.proxmox_node
+  cpu {
+    cores = 6
+    type  = "x86-64-v2-AES"
+  }
+  memory {
+    dedicated = 8192
+    floating  = 16384
+  }
+  disk {
+    datastore_id = "data"
+    file_id      = proxmox_virtual_environment_file.coreos_qcow2.id
+    interface    = "virtio0"
+    iothread     = true
+    discard      = "on"
+    size         = 120
+  }
+  initialization {
+    datastore_id      = "data"
+    user_data_file_id = proxmox_virtual_environment_file.ignition_snippet.id
+  }
+  network_device {
+    bridge = "vmbr0"
+  }
+  serial_device {}
+}

@@ -4,6 +4,18 @@ locals {
   ], basename(v.filename))]
   ocp_ssh_key = coalesce(var.ocp_ssh_key, local.default_ssh_keys[0])
   install_dir = abspath("${path.module}/sno")
+
+  default_interface = "ens18"
+  nmconnection = templatefile(
+    "${path.module}/templates/static.nmconnection.tftpl",
+    {
+      hostname     = var.ocp_sno_hostname
+      interface    = local.default_interface
+      address_cidr = var.ocp_net_config.address_cidr
+      gateway      = var.ocp_net_config.gateway
+      nameserver   = var.ocp_net_config.nameserver
+    }
+  )
 }
 
 data "local_file" "ssh_keys" {
@@ -15,7 +27,7 @@ resource "local_file" "install_config" {
   filename = "${local.install_dir}/install-config.yaml"
   content = yamlencode({
     apiVersion = "v1"
-    baseDomain = var.ocp_cluster_domain
+    baseDomain = var.ocp_base_domain
     compute = [
       {
         name     = "worker"
@@ -53,8 +65,36 @@ resource "local_file" "install_config" {
   })
 }
 
+resource "local_file" "custom_ignition" {
+  filename = "${local.install_dir}/custom.ign"
+  content = jsonencode({
+    storage = {
+      files = [
+        {
+          path = "/etc/NetworkManager/system-connections/${local.default_interface}.nmconnection",
+          contents = {
+            compression = "gzip",
+            source      = "data:;base64,${base64gzip(local.nmconnection)}"
+          },
+          mode = 384
+        }
+      ]
+      links = [
+        # restore legacy interface naming scheme, see:
+        # https://wiki.archlinux.org/title/Network_configuration#Revert_to_traditional_interface_names
+        {
+          path      = "/etc/udev/rules.d/80-net-setup-link.rules"
+          target    = "/dev/null"
+          hard      = false
+          overwrite = true
+        }
+      ]
+    }
+  })
+}
+
 resource "docker_container" "create_config" {
-  depends_on = [local_file.install_config]
+  depends_on = [local_file.install_config, local_file.custom_ignition]
   image      = docker_image.openshift_install.image_id
   name       = "create-config"
   entrypoint = ["create-config.sh"]
@@ -76,7 +116,7 @@ resource "docker_container" "create_config" {
 
 data "local_file" "sno_ignition" {
   depends_on = [docker_container.create_config]
-  filename   = "${local.install_dir}/bootstrap-in-place-for-live-iso.ign"
+  filename   = "${local.install_dir}/custom-sno.ign"
 }
 
 resource "proxmox_virtual_environment_file" "ignition_snippet" {
