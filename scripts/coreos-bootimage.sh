@@ -34,8 +34,12 @@ openshift-install coreos print-stream-json |
       echo "File ${filename%.*}* already exists. Skipping download."
       continue
     else
+      index_count="$(ls -1q index.txt* 2>/dev/null || true | wc -l)"
+      if [ "$index_count" -gt 0 ]; then mv index.txt{,.$index_count}; fi
+
       echo "Downloading $filename from $location..."
       curl -Lo "$filename" "$location"
+      echo "$location" >> index.txt
     fi
     
     if [[ "$filename" =~ \.(xz|gz)$ ]] && [[ "$DECOMPRESS" == true ]]; then

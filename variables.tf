@@ -80,8 +80,8 @@ variable "ocp_cluster_network_host_prefix" {
 variable "ocp_machine_network_cidr" {
   description = "The IP address pool for machines."
   type        = string
-  default     = "10.0.0.0/16"
-}
+  default     = "192.168.1.0/24"
+} # should match the CIDR that the preferred NIC resides in
 
 variable "ocp_service_network_cidr" {
   description = "The IP address pool for services."
@@ -104,7 +104,7 @@ variable "ocp_ssh_key" {
 variable "ocp_installation_disk" {
   description = "The target disk drive for coreos-installer."
   type        = string
-  default     = "/dev/sda"
+  default     = "/dev/vda"
 }
 
 variable "ocp_net_config" {

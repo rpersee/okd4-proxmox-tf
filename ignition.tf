@@ -94,7 +94,7 @@ resource "local_file" "custom_ignition" {
 }
 
 resource "docker_container" "create_config" {
-  depends_on = [local_file.install_config, local_file.custom_ignition]
+  depends_on = [local_file.install_config, local_file.custom_ignition, data.local_file.coreos_index]
   image      = docker_image.openshift_install.image_id
   name       = "create-config"
   entrypoint = ["create-config.sh"]
@@ -108,7 +108,7 @@ resource "docker_container" "create_config" {
     container_path = "/data"
   }
   rm      = true
-  command = ["/data"]
+  command = ["/data", "-u", format("'%s'", split("\n", data.local_file.coreos_index.content)[0])]
   provisioner "local-exec" {
     command = "docker logs -f ${self.name}"
   } # display script output in real-time

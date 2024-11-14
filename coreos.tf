@@ -36,3 +36,8 @@ resource "docker_container" "coreos_bootimage" {
     command = "docker logs -f ${self.name}"
   } # display script output in real-time
 }
+
+data "local_file" "coreos_index" {
+  depends_on = [docker_container.coreos_bootimage]
+  filename   = "${local.assets_directory}/index.txt"
+}

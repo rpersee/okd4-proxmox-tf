@@ -48,13 +48,22 @@ resource "proxmox_virtual_environment_vm" "sno" {
     dedicated = 8192
     floating  = 16384
   }
-  disk {
+  boot_order = ["virtio1", "virtio0"]
+  disk { # /dev/vda root disk
     datastore_id = "data"
-    file_id      = proxmox_virtual_environment_file.coreos_qcow2.id
+    file_format  = "raw"
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
     size         = 120
+  }
+  disk { # /dev/vdb bootstrap disk
+    datastore_id = "data"
+    file_id      = proxmox_virtual_environment_file.coreos_qcow2.id
+    interface    = "virtio1"
+    iothread     = true
+    discard      = "on"
+    size         = 100 # match the size of the qcow2 image
   }
   initialization {
     datastore_id      = "data"
