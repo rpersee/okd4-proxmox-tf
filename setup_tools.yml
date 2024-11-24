@@ -1,0 +1,44 @@
+---
+- name: Set up required tools
+  hosts: localhost
+  gather_facts: true
+  gather_subset: [ "!all", "!min", "env", "platform" ]
+  vars:
+    architecture_mapping: { "x86_64": "amd64", "aarch64": "arm64", "i386": "386", "i686": "386" }
+    architecture: "{{ 'arm' if ansible_architecture.startswith('arm') else architecture_mapping[ansible_architecture] }}"
+
+    terraform_version: 1.9.8
+    okd_version: 4.15.0-0.okd-2024-03-10-010116
+  tasks:
+    - name: Fail on 32-bit systems
+      ansible.builtin.fail:
+        msg: Client tools for OpenShift only support 64-bit
+      when: ansible_userspace_bits != "64"
+
+    - name: Get Terraform version
+      ansible.builtin.command: terraform version
+      register: tf_version
+      changed_when: false
+      failed_when: false
+
+    - name: Install Terraform
+      when: tf_version.rc != 0 or not tf_version.stdout_lines[0].endswith(terraform_version)
+      ansible.builtin.unarchive:
+        remote_src: true
+        src: https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_{{ ansible_system | lower }}_{{ architecture }}.zip
+        dest: "{{ ansible_env.HOME }}/.local/bin"
+        # creates: "{{ ansible_env.HOME }}/.local/bin/terraform" # check version instead
+        include: terraform
+
+    - name: Install client tools for OpenShift
+      loop:
+        - { archive: "openshift-client-linux", binary: "oc" }
+        - { archive: "openshift-install-linux", binary: "openshift-install" }
+      loop_control:
+        label: "{{ item.binary }}"
+      ansible.builtin.unarchive:
+        remote_src: true
+        src: https://github.com/okd-project/okd/releases/download/{{ okd_version }}/{{ item.archive }}{{ '-' ~ architecture if architecture.startswith('arm') else '' }}-{{ okd_version }}.tar.gz
+        dest: "{{ ansible_env.HOME }}/.local/bin"
+        creates: "{{ ansible_env.HOME }}/.local/bin/{{ item.binary }}"
+        include: "{{ item.binary }}"
